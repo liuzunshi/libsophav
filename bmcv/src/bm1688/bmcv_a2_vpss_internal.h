@@ -57,6 +57,25 @@ typedef enum bmcv_vpss_csc_type {
 	VPSS_CSC_RGB2RGB,
 } bmcv_vpss_csc_type;
 
+typedef struct bmcv_csc_cfg {
+	u8 is_fancy;
+	u8 is_user_defined_matrix;
+	bmcv_flip_mode flip_mode;
+	bmcv_vpss_csc_type csc_type;
+	bmcv_vpss_csc_matrix csc_matrix;
+} bmcv_csc_cfg;
+
+typedef struct stitch_ctx_{
+	u16 idx;
+	bm_status_t ret;
+	bm_handle_t handle;
+	bm_image input;
+	bm_image output;
+	bmcv_rect_t src_crop_rect;
+	bmcv_resize_algorithm algorithm;
+	bmcv_padding_attr_t padding_attr;
+} stitch_ctx;
+
 typedef struct vpss_thread_ctx_{
 	u16 idx;
 	u32 fd;
@@ -87,25 +106,6 @@ typedef struct bmcv_circle_cfg {
 	} cfg1;
 	u16 radius;
 } bmcv_circle_cfg;
-
-typedef struct bmcv_csc_cfg {
-	u8 is_fancy;
-	u8 is_user_defined_matrix;
-	bmcv_flip_mode flip_mode;
-	bmcv_vpss_csc_type csc_type;
-	bmcv_vpss_csc_matrix csc_matrix;
-} bmcv_csc_cfg;
-
-typedef struct stitch_ctx_{
-	u16 idx;
-	bm_status_t ret;
-	bm_handle_t handle;
-	bm_image input;
-	bm_image output;
-	bmcv_rect_t src_crop_rect;
-	bmcv_resize_algorithm algorithm;
-	bmcv_padding_attr_t padding_attr;
-} stitch_ctx;
 
 #ifdef BM_PCIE_MODE
 struct vpp_batch_n {

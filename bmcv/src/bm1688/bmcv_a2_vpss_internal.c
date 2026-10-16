@@ -916,14 +916,6 @@ bm_status_t bm_vpss_set_convertto(bmcv_convert_to_attr convertto_attr, struct vp
 	return BM_SUCCESS;
 }
 
-bm_status_t bm_vpss_chn_set_circle(bmcv_circle_cfg *circle_attr, bm_vpss_cfg *vpss_cfg) {
-	// borrowing unused structures to maintain compatibility with the previous ioctl
-	vpss_cfg->chn_attr.chn_attr.frame_rate.src_frame_rate = circle_attr->cfg0.raw;
-	vpss_cfg->chn_attr.chn_attr.frame_rate.dst_frame_rate = circle_attr->cfg1.raw;
-	vpss_cfg->chn_attr.chn_attr.video_format = circle_attr->radius;
-	return BM_SUCCESS;
-}
-
 bm_status_t bm_vpss_chn_set_gop(bmcv_rgn_cfg* gop_attr, struct rgn_cfg *cfg) {
 	unsigned char layer_num = (gop_attr->rgn_num + 7) >> 3;
 	unsigned char gop_num = 0;
@@ -933,6 +925,14 @@ bm_status_t bm_vpss_chn_set_gop(bmcv_rgn_cfg* gop_attr, struct rgn_cfg *cfg) {
 		for (int j = 0; j < gop_num; j++)
 			cfg[i].param[j] = gop_attr->param[(i * 8 + j)];
 	}
+	return BM_SUCCESS;
+}
+
+bm_status_t bm_vpss_chn_set_circle(bmcv_circle_cfg *circle_attr, bm_vpss_cfg *vpss_cfg) {
+	// borrowing unused structures to maintain compatibility with the previous ioctl
+	vpss_cfg->chn_attr.chn_attr.frame_rate.src_frame_rate = circle_attr->cfg0.raw;
+	vpss_cfg->chn_attr.chn_attr.frame_rate.dst_frame_rate = circle_attr->cfg1.raw;
+	vpss_cfg->chn_attr.chn_attr.video_format = circle_attr->radius;
 	return BM_SUCCESS;
 }
 
@@ -1173,7 +1173,7 @@ bm_status_t bm_vpss_asic(
 		}
 
 		if (convert_to_attr != NULL)
-			bm_vpss_set_convertto(convert_to_attr[i], &ctx[i].vpss_cfg.chn_convert_cfg);
+			bm_vpss_set_convertto(convert_to_attr[0], &ctx[i].vpss_cfg.chn_convert_cfg);
 
 		if (border_param != NULL && border_param[i].border_num > 0)
 			bm_vpss_set_chn_draw_rect(border_param + i, &ctx[i].vpss_cfg.chn_draw_rect_cfg);
@@ -1189,7 +1189,7 @@ bm_status_t bm_vpss_asic(
 		if (circle_attr != NULL && circle_attr->cfg0.b.enable)
 			bm_vpss_chn_set_circle(circle_attr, &ctx[i].vpss_cfg);
 
-bm_send_image_frame(input[i], &ctx[i].vpss_cfg.snd_frm_cfg.video_frame, ctx[i].vpss_cfg.grp_attr.grp_attr.pixel_format);
+		bm_send_image_frame(input[i], &ctx[i].vpss_cfg.snd_frm_cfg.video_frame, ctx[i].vpss_cfg.grp_attr.grp_attr.pixel_format);
 
 		int input_pixnum = input[i].width * input[i].height;
 		int output_pixnum = output[i].width * output[i].height;
@@ -1225,7 +1225,7 @@ bm_send_image_frame(input[i], &ctx[i].vpss_cfg.snd_frm_cfg.video_frame, ctx[i].v
 #endif
 		}
 		if (ctx[i].ret != BM_SUCCESS) {
-			bmlib_log(BMCV_LOG_TAG, BMLIB_LOG_ERROR, "ret(0x%lx), bm_send_frame fail\n", (unsigned long)ret);
+			bmlib_log(BMCV_LOG_TAG, BMLIB_LOG_ERROR, "ret(0x%d), bm_send_frame fail\n", ctx[i].ret);
 		}
 		ret |= ctx[i].ret;
 	}
@@ -1416,6 +1416,8 @@ fail:
 		if (in_need_copy[i])
 			bm_image_destroy(in_align + i);
 		if (out_need_alloc[i])
+			bm_image_detach(out_align[i]);
+		if (out_need_create[i])
 			bm_image_destroy(out_align + i);
 	}
 	return ret;
